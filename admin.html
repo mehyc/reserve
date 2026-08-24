@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>後台 - 預約管理</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js">
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: linear-gradient(145deg, #e8ddd0 0%, #d5c8b8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 0;
+            padding: 20px 16px;
+        }
+
+        .card {
+            background: rgba(255, 248, 235, 0.9);
+            backdrop-filter: blur(4px);
+            border-radius: 60px 60px 40px 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+            padding: 32px 24px 30px;
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+            border: 2px solid #fff3d6;
+            margin-top: 10px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #4a2e1b;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            text-shadow: 0 4px 8px rgba(255, 215, 140, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        h1 span {
+            background: #ffdbb5;
+            padding: 0 16px;
+            border-radius: 80px;
+            font-size: 1.8rem;
+            line-height: 1.4;
+        }
+
+        .subhead {
+            font-size: 1rem;
+            color: #6b4c2e;
+            background: #ffe5c4;
+            display: inline-block;
+            padding: 6px 24px;
+            border-radius: 40px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .admin-section {
+            padding: 20px 16px;
+            background: #fff6e5;
+            border-radius: 60px;
+            box-shadow: inset 0 2px 8px rgba(90, 60, 30, 0.08);
+            border: 2px dashed #dbbd96;
+            min-height: 200px;
+        }
+
+        .admin-stats {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            border: 2px solid #dbbd96;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .stat-box .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4a2e1b;
+        }
+
+        .stat-box .label {
+            font-size: 0.8rem;
+            color: #6b4c2e;
+        }
+
+        .booking-list {
+            max-height: 400px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .booking-item {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 30px;
+            margin-bottom: 8px;
+            border: 1px solid #dbbd96;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .booking-item .info {
+            font-weight: 600;
+            color: #2d1f0f;
+        }
+
+        .booking-item .detail {
+            color: #6b4c2e;
+            font-size: 0.9rem;
+        }
+
+        .booking-item .delete-btn {
+            background: #e8c4b0;
+            border: none;
+            border-radius: 30px;
+            padding: 4px 14px;
+            color: #5a2d1a;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .booking-item .delete-btn:hover {
+            background: #d4a890;
+        }
+
+        .empty-text {
+            color: #6b4c2e;
+            font-size: 1.1rem;
+            padding: 30px 0;
+            opacity: 0.6;
+        }
+
+        .footer-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .footer-btn {
+            background: transparent;
+            border: 2px solid #ac8b6b;
+            color: #4d3621;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            touch-action: manipulation;
+            background: rgba(255, 242, 224, 0.5);
+        }
+
+        .footer-btn:hover {
+            background: #f5e2cb;
+        }
+
+        .footer-btn.danger {
+            border-color: #c47a6a;
+            color: #7a3d2e;
+        }
+
+        .footer-btn.danger:hover {
+            background: #f0d0c4;
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            color: #5f4530;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .loading-text {
+            color: #6b4c2e;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 20px 12px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            h1 span {
+                font-size: 1.6rem;
+            }
+            .booking-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .footer-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>
+            <span>📊</span> 後台管理 <span>📊</span>
+        </h1>
+        <div class="subhead">📋 查看所有預約（即時同步）</div>
+
+        <div class="admin-section">
+            <div class="loading-text" id="statusText">⏳ 載入中...</div>
+
+            <div class="admin-stats">
+                <div class="stat-box">
+                    <div class="number" id="totalCount">0</div>
+                    <div class="label">總預約</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="todayCount">0</div>
+                    <div class="label">今日預約</div>
+                </div>
+            </div>
+            <div class="booking-list" id="bookingList">
+                <div class="empty-text">📭 目前沒有預約記錄</div>
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <button class="footer-btn danger" id="clearBtn">🗑️ 清除所有預約</button>
+        </div>
+
+        <div class="footer-note">🔒 只有您知道這個頁面 · 資料儲存在 Firebase 雲端</div>
+    </div>
+
+    <div class="toast" id="toast">✅ 已更新！</div>
+
+    <script>
+        // ============================================================
+        // 🔥 Firebase 設定（跟 index.html 一樣）
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDarCKZ7theedmCgjOOoucQTKbXgATSlHg",
+            authDomain: "booking-system-a0c0e.firebaseapp.com",
+            databaseURL: "https://booking-system-a0c0e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "booking-system-a0c0e",
+            storageBucket: "booking-system-a0c0e.firebasestorage.app",
+            messagingSenderId: "412529559044",
+            appId: "1:412529559044:web:3fda201277a214e34d1751",
+            measurementId: "G-JZBBVPG24C"
+        };
+        // ============================================================
+
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // ===== DOM 元素 =====
+        const bookingList = document.getElementById('bookingList');
+        const totalCount = document.getElementById('totalCount');
+        const todayCount = document.getElementById('todayCount');
+        const clearBtn = document.getElementById('clearBtn');
+        const toast = document.getElementById('toast');
+        const statusText = document.getElementById('statusText');
+
+        let bookings = [];
+        let isLoading = true;
+
+        // ===== 工具函數 =====
+        function showToast(text) {
+            toast.textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function getToday() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        // ===== 渲染列表 =====
+        function renderAdmin() {
+            totalCount.textContent = bookings.length;
+            const today = getToday();
+            const todayBookings = bookings.filter(b => b.date === today);
+            todayCount.textContent = todayBookings.length;
+
+            if (bookings.length === 0) {
+                bookingList.innerHTML = `<div class="empty-text">📭 目前沒有預約記錄</div>`;
+                return;
+            }
+
+            const sorted = [...bookings].reverse();
+
+            let html = '';
+            sorted.forEach((b, index) => {
+                const realIndex = bookings.length - 1 - index;
+                const emoji = b.emoji || '📋';
+                const dateStr = formatDate(b.date);
+                const name = b.name || '未署名';
+                html += `
+                        <div class="booking-item" data-key="${b.key || ''}">
+                            <div>
+                                <span class="info">${emoji} ${b.service}</span>
+                                <span class="detail">👤 ${name} · 📆 ${dateStr} · ⏰ ${b.time}</span>
+                            </div>
+                            <button class="delete-btn" data-key="${b.key || ''}">✕ 刪除</button>
+                        </div>
+                    `;
+            });
+
+            bookingList.innerHTML = html;
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const key = this.dataset.key;
+                    if (!key) return;
+                    if (confirm('確定要刪除這筆預約嗎？')) {
+                        database.ref('bookings/' + key).remove()
+                            .then(() => {
+                                showToast('🗑️ 已刪除預約');
+                            })
+                            .catch((error) => {
+                                alert('刪除失敗：' + error.message);
+                            });
+                    }
+                });
+            });
+        }
+
+        // ===== 清除所有預約 =====
+        function clearAll() {
+            if (bookings.length === 0) {
+                showToast('📭 已經沒有預約了');
+                return;
+            }
+            if (confirm('⚠️ 確定要清除所有預約記錄嗎？\n此動作無法復原！')) {
+                database.ref('bookings').remove()
+                    .then(() => {
+                        showToast('🗑️ 已清除所有預約');
+                    })
+                    .catch((error) => {
+                        alert('清除失敗：' + error.message);
+                    });
+            }
+        }
+
+        clearBtn.addEventListener('click', clearAll);
+
+        // ===== 監聽 Firebase 即時更新 =====
+        const bookingsRef = database.ref('bookings');
+
+        bookingsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            bookings = [];
+
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const item = data[key];
+                    item.key = key;
+                    bookings.push(item);
+                });
+            }
+
+            if (isLoading) {
+                isLoading = false;
+                statusText.textContent = '✅ 已載入 ' + bookings.length + ' 筆預約';
+                statusText.style.color = '#4a7a4a';
+            }
+
+            renderAdmin();
+        }, (error) => {
+            statusText.textContent = '❌ 載入失敗：' + error.message;
+            statusText.style.color = '#b06a4a';
+        });
+
+        const connectedRef = database.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            if (snap.val() === true) {
+                statusText.textContent = '✅ 已連線 Firebase';
+                statusText.style.color = '#4a7a4a';
+            } else {
+                statusText.textContent = '⚠️ 離線中，請檢查網路';
+                statusText.style.color = '#b06a4a';
+            }
+        });
+
+        console.log('📊 後台 (Firebase 版) 已準備好了！');
+    </script>
+</body>
+</html>
