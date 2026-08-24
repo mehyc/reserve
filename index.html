@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>預約系統</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js">
+    </script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -37,7 +44,7 @@
         }
 
         h1 {
-            font-size: 2.6rem;
+            font-size: 2.4rem;
             font-weight: 700;
             color: #4a2e1b;
             letter-spacing: 2px;
@@ -54,7 +61,7 @@
             background: #ffdbb5;
             padding: 0 16px;
             border-radius: 80px;
-            font-size: 2.2rem;
+            font-size: 2rem;
             line-height: 1.4;
         }
 
@@ -65,13 +72,12 @@
             display: inline-block;
             padding: 6px 24px;
             border-radius: 40px;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             font-weight: 500;
             letter-spacing: 1px;
         }
 
         .date-section {
-            margin: 0 0 18px;
             padding: 20px 16px;
             background: #fff6e5;
             border-radius: 60px;
@@ -94,7 +100,10 @@
             width: 100%;
         }
 
-        select, input[type="date"], input[type="time"] {
+        select,
+        input[type="date"],
+        input[type="time"],
+        input[type="text"] {
             background: white;
             border: 2px solid #dbbd96;
             padding: 12px 16px;
@@ -105,13 +114,22 @@
             color: #2d1f0f;
             font-weight: 600;
             outline: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
             transition: 0.2s;
             text-align: center;
             cursor: pointer;
         }
 
-        select:focus, input[type="date"]:focus, input[type="time"]:focus {
+        input[type="text"] {
+            cursor: text;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        select:focus,
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        input[type="text"]:focus {
             border-color: #b48b5a;
             box-shadow: 0 0 0 4px #f7dfbe;
         }
@@ -145,7 +163,7 @@
             font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: 2px;
-            box-shadow: 0 6px 0 #3f6b3f, 0 8px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 0 #3f6b3f, 0 8px 16px rgba(0, 0, 0, 0.1);
             transition: 0.08s linear;
             cursor: pointer;
             width: fit-content;
@@ -156,17 +174,23 @@
 
         .btn-send:active {
             transform: translateY(5px);
-            box-shadow: 0 1px 0 #3f6b3f, 0 8px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 0 #3f6b3f, 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .share-area {
-            margin-top: 24px;
+            margin-top: 16px;
             background: #eedbc2;
             padding: 16px 12px;
             border-radius: 60px;
             display: none;
             border: 2px solid #dbbd96;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
             flex-direction: column;
             align-items: center;
             gap: 12px;
@@ -177,7 +201,7 @@
         }
 
         .share-message {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             background: #fffbf0;
             padding: 14px 18px;
             border-radius: 40px;
@@ -187,31 +211,37 @@
             border: 1px solid #c6aa84;
             font-weight: 700;
             white-space: pre-line;
+            text-align: left;
+            line-height: 1.6;
         }
 
         .share-buttons {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: wrap;
             justify-content: center;
+            width: 100%;
         }
 
         .share-btn {
             background: #4e7a9c;
             border: none;
-            padding: 12px 24px;
+            padding: 10px 18px;
             border-radius: 60px;
             color: white;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             box-shadow: 0 4px 0 #1f405a;
             transition: 0.08s linear;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             border: 2px solid #8bb3d1;
             touch-action: manipulation;
+            flex: 1;
+            min-width: 80px;
+            justify-content: center;
         }
 
         .share-btn:active {
@@ -226,7 +256,7 @@
         }
 
         .reset-area {
-            margin-top: 20px;
+            margin-top: 16px;
             display: none;
             justify-content: center;
         }
@@ -259,69 +289,135 @@
             font-size: 0.8rem;
             opacity: 0.7;
             letter-spacing: 1px;
-            height: 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .loading-text {
+            color: #6b4c2e;
+            font-size: 0.9rem;
+            opacity: 0.7;
         }
 
         @media (max-width: 480px) {
-            .card { padding: 24px 16px; }
-            h1 { font-size: 2.2rem; }
-            .time-group { flex-direction: column; align-items: center; }
-            .time-group select, .time-group input[type="time"] { max-width: 220px; }
+            .card {
+                padding: 20px 12px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            h1 span {
+                font-size: 1.6rem;
+            }
+            .time-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            .time-group select,
+            .time-group input[type="time"] {
+                max-width: 220px;
+            }
+            .share-btn {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+                min-width: 70px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="card" id="appCard">
-    <h1>
-        <span>📅</span> 預約系統 <span>📅</span>
-    </h1>
-    <div class="subhead">填寫預約資訊</div>
+    <div class="card">
+        <h1>
+            <span>📅</span> 預約系統 <span>📅</span>
+        </h1>
+        <div class="subhead">📝 填寫預約資訊</div>
 
-    <!-- 直接顯示預約表單，移除要/不要按鈕 -->
-    <div class="date-section" id="dateSection">
-        <label for="serviceSelect">📋 選擇項目</label>
-        <select id="serviceSelect">
-            <option value="">請選擇</option>
-            <option value="出門">🚶 出門</option>
-            <option value="聊天">💬 聊天</option>
-            <option value="打電話">📞 打電話</option>
-        </select>
+        <div class="date-section">
+            <label for="nameInput">👤 您的姓名</label>
+            <input type="text" id="nameInput" placeholder="請輸入姓名" maxlength="20">
 
-        <label>📅 選擇日期</label>
-        <input type="date" id="datePicker" value="2026-08-24" min="2026-08-24">
-
-        <label>⏰ 選擇時間</label>
-        <div class="time-group">
-            <select id="timeTypeSelect">
-                <option value="now">🟢 現在</option>
-                <option value="specific">🕐 指定時間</option>
-                <option value="later">🌙 晚點</option>
+            <label for="serviceSelect">📋 選擇項目</label>
+            <select id="serviceSelect">
+                <option value="">請選擇</option>
+                <option value="出門">🚶 出門</option>
+                <option value="聊天">💬 聊天</option>
+                <option value="打電話">📞 打電話</option>
             </select>
-            <input type="time" id="timePicker" value="15:00" style="display:none;">
+
+            <label>📅 選擇日期</label>
+            <input type="date" id="datePicker">
+
+            <label>⏰ 選擇時間</label>
+            <div class="time-group">
+                <select id="timeTypeSelect">
+                    <option value="now">🟢 現在</option>
+                    <option value="specific">🕐 指定時間</option>
+                    <option value="later">🌙 晚點</option>
+                </select>
+                <input type="time" id="timePicker" value="15:00" style="display:none;">
+            </div>
+
+            <button class="btn-send" id="btnSendDate">📨 送出預約</button>
+            <div class="loading-text" id="statusText">✅ 已連線 Firebase</div>
         </div>
 
-        <button class="btn-send" id="btnSendDate">📨 送出預約</button>
-    </div>
-
-    <div class="share-area" id="shareArea">
-        <div class="share-message" id="shareMessage">🎉 預約成功！</div>
-        <div class="share-buttons">
-            <button class="share-btn" id="copyBtn">📋 複製訊息</button>
-            <button class="share-btn" id="shareBtn">📤 分享</button>
+        <div class="share-area" id="shareArea">
+            <div class="share-message" id="shareMessage">🎉 預約成功！</div>
+            <div class="share-buttons">
+                <button class="share-btn copy-btn" id="copyBtn">📋 複製</button>
+            </div>
         </div>
+
+        <div class="reset-area" id="resetArea">
+            <button class="reset-btn" id="resetBtn">⟳ 重新開始</button>
+        </div>
+
+        <div class="footer-note">💡 預約會即時同步到雲端</div>
     </div>
 
-    <div class="reset-area" id="resetArea">
-        <button class="reset-btn" id="resetBtn">⟳ 重新開始</button>
-    </div>
+    <div class="toast" id="toast">✅ 已複製！</div>
 
-    <div class="footer-note"></div>
-</div>
+    <script>
+        // ============================================================
+        // 🔥 Firebase 設定（從你的專案複製貼上）
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDarCKZ7theedmCgjOOoucQTKbXgATSlHg",
+            authDomain: "booking-system-a0c0e.firebaseapp.com",
+            databaseURL: "https://booking-system-a0c0e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "booking-system-a0c0e",
+            storageBucket: "booking-system-a0c0e.firebasestorage.app",
+            messagingSenderId: "412529559044",
+            appId: "1:412529559044:web:3fda201277a214e34d1751",
+            measurementId: "G-JZBBVPG24C"
+        };
+        // ============================================================
 
-<script>
-    (function() {
-        "use strict";
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
+        // ===== DOM 元素 =====
+        const nameInput = document.getElementById('nameInput');
         const serviceSelect = document.getElementById('serviceSelect');
         const datePicker = document.getElementById('datePicker');
         const timeTypeSelect = document.getElementById('timeTypeSelect');
@@ -330,61 +426,47 @@
         const shareArea = document.getElementById('shareArea');
         const shareMessage = document.getElementById('shareMessage');
         const copyBtn = document.getElementById('copyBtn');
-        const shareBtn = document.getElementById('shareBtn');
         const resetBtn = document.getElementById('resetBtn');
         const resetArea = document.getElementById('resetArea');
+        const toast = document.getElementById('toast');
+        const statusText = document.getElementById('statusText');
 
-        let currentDate = datePicker.value;
-        let currentService = '';
-        let currentTime = '';
-
-        // 時間類型切換
-        timeTypeSelect.addEventListener('change', function() {
-            if (this.value === 'specific') {
-                timePicker.style.display = 'inline-block';
-                timePicker.value = '15:00';
-            } else {
-                timePicker.style.display = 'none';
-            }
-        });
-
-        // 重置所有狀態
-        function resetAllState() {
-            shareArea.classList.remove('active');
-            resetArea.classList.remove('active');
-
-            // 重置下拉選單
-            serviceSelect.value = '';
-            currentService = '';
-            timeTypeSelect.value = 'now';
-            timePicker.style.display = 'none';
-            timePicker.value = '15:00';
-
-            const today = new Date().toISOString().split('T')[0];
-            datePicker.value = today;
-            currentDate = today;
-            shareMessage.textContent = '🎉 預約成功！';
+        // ===== 工具函數 =====
+        function showToast(text) {
+            toast.textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
         }
 
-        // 取得時間文字
         function getTimeText() {
             const timeType = timeTypeSelect.value;
             if (timeType === 'now') return '現在';
             if (timeType === 'later') return '晚點';
             if (timeType === 'specific') {
-                const timeVal = timePicker.value || '15:00';
-                return timeVal;
+                return timePicker.value || '15:00';
             }
             return '';
         }
 
-        // 送出預約
+        function getToday() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // ===== 送出預約到 Firebase =====
         function handleSendDate() {
+            const name = nameInput.value.trim();
             const selectedService = serviceSelect.value;
             const selectedDate = datePicker.value;
             const timeText = getTimeText();
 
-            // 檢查是否有選擇項目
+            if (!name) {
+                alert('請輸入您的姓名！');
+                nameInput.focus();
+                return;
+            }
+
             if (!selectedService) {
                 alert('請選擇要預約的項目！');
                 return;
@@ -395,7 +477,6 @@
                 return;
             }
 
-            // 取得服務名稱的 emoji
             const serviceEmoji = {
                 '出門': '🚶',
                 '聊天': '💬',
@@ -403,79 +484,116 @@
             };
 
             const emoji = serviceEmoji[selectedService] || '📋';
-            const confirmMessage = `📅 確認預約「${emoji} ${selectedService}」\n📆 ${selectedDate}\n⏰ ${timeText}\n\n確定嗎？`;
+            const confirmMessage =
+                `📅 確認預約\n👤 ${name}\n${emoji} ${selectedService}\n📆 ${selectedDate}\n⏰ ${timeText}\n\n確定嗎？`;
 
             if (confirm(confirmMessage)) {
-                currentService = selectedService;
-                currentDate = selectedDate;
-                const displayTime = timeText;
-                shareMessage.textContent = `🎉 預約成功！${emoji} ${currentService}\n📆 ${currentDate} · ⏰ ${displayTime}`;
-                shareArea.classList.add('active');
-                resetArea.classList.add('active');
+                btnSendDate.disabled = true;
+                btnSendDate.textContent = '⏳ 傳送中...';
+                statusText.textContent = '⏳ 上傳中...';
+
+                const newKey = database.ref('bookings').push().key;
+
+                const bookingData = {
+                    name: name,
+                    service: selectedService,
+                    date: selectedDate,
+                    time: timeText,
+                    emoji: emoji,
+                    timestamp: new Date().toISOString()
+                };
+
+                database.ref('bookings/' + newKey).set(bookingData)
+                    .then(() => {
+                        shareMessage.textContent =
+                            `🎉 預約成功！\n👤 ${name}\n${emoji} ${selectedService}\n📆 ${selectedDate} · ⏰ ${timeText}`;
+                        shareArea.classList.add('active');
+                        resetArea.classList.add('active');
+                        statusText.textContent = '✅ 預約已儲存到雲端！';
+                        showToast('✅ 預約已儲存！');
+
+                        btnSendDate.disabled = false;
+                        btnSendDate.textContent = '📨 送出預約';
+                    })
+                    .catch((error) => {
+                        alert('❌ 儲存失敗：' + error.message);
+                        statusText.textContent = '❌ 儲存失敗，請重試';
+                        btnSendDate.disabled = false;
+                        btnSendDate.textContent = '📨 送出預約';
+                    });
             }
         }
 
-        // 複製訊息
+        // ===== 複製 =====
         function handleCopy() {
             const text = shareMessage.textContent;
             navigator.clipboard.writeText(text).then(() => {
-                const original = copyBtn.textContent;
-                copyBtn.textContent = '✅ 已複製!';
-                setTimeout(() => { copyBtn.textContent = original; }, 1800);
+                showToast('✅ 已複製！');
             }).catch(() => {
-                alert('複製失敗，請手動複製：' + text);
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ 已複製！');
             });
         }
 
-        // 分享
-        function handleShare() {
-            const text = shareMessage.textContent;
-            if (navigator.share) {
-                navigator.share({
-                    title: '預約',
-                    text: text,
-                }).catch((err) => {
-                    if (err.name !== 'AbortError') {
-                        alert('分享失敗: ' + err);
-                    }
-                });
+        // ===== 重置 =====
+        function resetAllState() {
+            shareArea.classList.remove('active');
+            resetArea.classList.remove('active');
+
+            nameInput.value = '';
+            serviceSelect.value = '';
+            timeTypeSelect.value = 'now';
+            timePicker.style.display = 'none';
+            timePicker.value = '15:00';
+
+            const today = getToday();
+            datePicker.value = today;
+            shareMessage.textContent = '🎉 預約成功！';
+            statusText.textContent = '✅ 已連線 Firebase';
+        }
+
+        // ===== 時間類型切換 =====
+        timeTypeSelect.addEventListener('change', function() {
+            if (this.value === 'specific') {
+                timePicker.style.display = 'inline-block';
+                timePicker.value = '15:00';
             } else {
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('已複製訊息到剪貼簿，可以貼給朋友 💌');
-                }).catch(() => {
-                    alert('請手動複製訊息：' + text);
-                });
+                timePicker.style.display = 'none';
             }
-        }
+        });
 
-        // 重新開始
-        function handleReset() {
-            resetAllState();
-        }
-
-        // 綁定事件
+        // ===== 事件綁定 =====
         btnSendDate.addEventListener('click', handleSendDate);
         copyBtn.addEventListener('click', handleCopy);
-        shareBtn.addEventListener('click', handleShare);
-        resetBtn.addEventListener('click', handleReset);
+        resetBtn.addEventListener('click', resetAllState);
 
-        datePicker.addEventListener('change', function() {
-            currentDate = this.value;
+        nameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                btnSendDate.click();
+            }
         });
 
-        serviceSelect.addEventListener('change', function() {
-            currentService = this.value;
+        // ===== 初始化 =====
+        const today = getToday();
+        datePicker.value = today;
+
+        const connectedRef = database.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            if (snap.val() === true) {
+                statusText.textContent = '✅ 已連線 Firebase';
+                statusText.style.color = '#4a7a4a';
+            } else {
+                statusText.textContent = '⚠️ 離線中，請檢查網路';
+                statusText.style.color = '#b06a4a';
+            }
         });
 
-        // 設定預設日期
-        (function setDefaultDate() {
-            const today = new Date().toISOString().split('T')[0];
-            datePicker.value = today;
-            currentDate = today;
-        })();
-
-        console.log('📅 預約系統已準備好了！');
-    })();
-</script>
+        console.log('📅 預約系統 (Firebase 版) 已準備好了！');
+    </script>
 </body>
 </html>
