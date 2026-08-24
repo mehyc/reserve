@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>要跟我出門嗎？</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: linear-gradient(145deg, #f9e7b3 0%, #f5d78c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 16px;
+            touch-action: manipulation;
+        }
+
+        .card {
+            background: rgba(255, 248, 235, 0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 60px 60px 40px 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 32px 24px 30px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.25s ease;
+            border: 2px solid #fff3d6;
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #4a2e1b;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 8px rgba(255, 215, 140, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        h1 span {
+            background: #ffdbb5;
+            padding: 0 16px;
+            border-radius: 80px;
+            font-size: 2.2rem;
+            line-height: 1.4;
+        }
+
+        .subhead {
+            font-size: 1rem;
+            color: #6b4c2e;
+            background: #ffe5c4;
+            display: inline-block;
+            padding: 6px 24px;
+            border-radius: 40px;
+            margin-bottom: 28px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 28px 0 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group.hidden {
+            display: none;
+        }
+
+        .btn {
+            border: none;
+            background: white;
+            padding: 16px 40px;
+            border-radius: 80px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #3d2b1a;
+            box-shadow: 0 6px 0 #b48b6b, 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.08s linear;
+            cursor: pointer;
+            min-width: 130px;
+            letter-spacing: 2px;
+            touch-action: manipulation;
+            border: 2px solid #fae3c0;
+        }
+
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #b48b6b, 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-yes {
+            background: #fddc9b;
+            color: #2d1f0f;
+            border-color: #f8cb7a;
+        }
+
+        .btn-no {
+            background: #f5e3d0;
+            color: #4f3a28;
+            border-color: #e6cfb5;
+            position: relative;
+            transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-no--run {
+            position: relative;
+            transition: left 0.08s linear, top 0.08s linear, transform 0.12s ease;
+            z-index: 10;
+        }
+
+        .btn-no--small {
+            transform: scale(0.7);
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-no--smaller {
+            transform: scale(0.4);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-no--tiny {
+            transform: scale(0.2);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-no--disappear {
+            transform: scale(0.05);
+            opacity: 0.3;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .date-section {
+            margin: 24px 0 18px;
+            padding: 16px 12px;
+            background: #fff6e5;
+            border-radius: 60px;
+            box-shadow: inset 0 2px 8px rgba(90, 60, 30, 0.08);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            border: 2px dashed #dbbd96;
+        }
+
+        .date-section.active {
+            display: flex;
+        }
+
+        .date-section label {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #4a321e;
+            background: #efdbbc;
+            padding: 6px 24px;
+            border-radius: 60px;
+            letter-spacing: 1px;
+        }
+
+        input[type="date"] {
+            background: white;
+            border: 2px solid #dbbd96;
+            padding: 14px 20px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            width: 100%;
+            max-width: 260px;
+            color: #2d1f0f;
+            font-weight: 600;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: 0.2s;
+            text-align: center;
+        }
+
+        input[type="date"]:focus {
+            border-color: #b48b5a;
+            box-shadow: 0 0 0 4px #f7dfbe;
+        }
+
+        .btn-send {
+            background: #7aa67a;
+            border: none;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 60px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            box-shadow: 0 6px 0 #3f6b3f, 0 8px 16px rgba(0,0,0,0.1);
+            transition: 0.08s linear;
+            cursor: pointer;
+            width: fit-content;
+            margin: 4px auto 0;
+            border: 2px solid #b8d9b8;
+            touch-action: manipulation;
+        }
+
+        .btn-send:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #3f6b3f, 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .share-area {
+            margin-top: 24px;
+            background: #eedbc2;
+            padding: 16px 12px;
+            border-radius: 60px;
+            display: none;
+            border: 2px solid #dbbd96;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .share-area.active {
+            display: flex;
+        }
+
+        .share-message {
+            font-size: 1.4rem;
+            background: #fffbf0;
+            padding: 14px 18px;
+            border-radius: 40px;
+            width: 100%;
+            word-break: break-word;
+            color: #302010;
+            border: 1px solid #c6aa84;
+            font-weight: 700;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .share-btn {
+            background: #4e7a9c;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 0 #1f405a;
+            transition: 0.08s linear;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #8bb3d1;
+            touch-action: manipulation;
+        }
+
+        .share-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 #1f405a;
+        }
+
+        .share-btn.copy-btn {
+            background: #a88b6b;
+            box-shadow: 0 4px 0 #6f553b;
+            border-color: #cfb79b;
+        }
+
+        .reset-area {
+            margin-top: 20px;
+            display: none;
+            justify-content: center;
+        }
+
+        .reset-area.active {
+            display: flex;
+        }
+
+        .reset-btn {
+            background: transparent;
+            border: 2px solid #ac8b6b;
+            color: #4d3621;
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            touch-action: manipulation;
+            background: rgba(255, 242, 224, 0.5);
+        }
+
+        .reset-btn:hover {
+            background: #f5e2cb;
+        }
+
+        .footer-note {
+            margin-top: 22px;
+            color: #5f4530;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            letter-spacing: 1px;
+            height: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 24px 16px; }
+            h1 { font-size: 2.2rem; }
+            .btn { min-width: 100px; padding: 14px 20px; font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="card" id="appCard">
+    <h1>
+        <span>🐾</span> 跟我出門嗎 <span>🐾</span>
+    </h1>
+    <div class="subhead">選「要」或「不要」</div>
+
+    <div class="btn-group" id="mainBtnGroup">
+        <button class="btn btn-yes" id="btnYes">要</button>
+        <button class="btn btn-no" id="btnNo">不要</button>
+    </div>
+
+    <div class="date-section" id="dateSection">
+        <label for="datePicker">📅 選個日子</label>
+        <input type="date" id="datePicker" value="2026-08-24" min="2026-08-24">
+        <button class="btn-send" id="btnSendDate">📨 送出</button>
+    </div>
+
+    <div class="share-area" id="shareArea">
+        <div class="share-message" id="shareMessage">🎉 預約成功！</div>
+        <div class="share-buttons">
+            <button class="share-btn" id="copyBtn">📋 複製訊息</button>
+            <button class="share-btn" id="shareBtn">📤 分享</button>
+        </div>
+    </div>
+
+    <div class="reset-area" id="resetArea">
+        <button class="reset-btn" id="resetBtn">⟳ 重新開始</button>
+    </div>
+
+    <!-- 底部文字已移除，保留空白 -->
+    <div class="footer-note"></div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        const btnYes = document.getElementById('btnYes');
+        const btnNo = document.getElementById('btnNo');
+        const dateSection = document.getElementById('dateSection');
+        const datePicker = document.getElementById('datePicker');
+        const btnSendDate = document.getElementById('btnSendDate');
+        const shareArea = document.getElementById('shareArea');
+        const shareMessage = document.getElementById('shareMessage');
+        const copyBtn = document.getElementById('copyBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resetArea = document.getElementById('resetArea');
+        const mainBtnGroup = document.getElementById('mainBtnGroup');
+
+        let currentDate = datePicker.value;
+
+        // 重置所有狀態
+        function resetAllState() {
+            dateSection.classList.remove('active');
+            shareArea.classList.remove('active');
+            resetArea.classList.remove('active');
+            mainBtnGroup.classList.remove('hidden');
+
+            // 重置「不要」按鈕樣式
+            btnNo.classList.remove('btn-no--run', 'btn-no--small', 'btn-no--smaller', 'btn-no--tiny', 'btn-no--disappear');
+            btnNo.style.position = '';
+            btnNo.style.left = '';
+            btnNo.style.top = '';
+            btnNo.style.transform = '';
+            btnNo.style.pointerEvents = '';
+            btnNo.style.opacity = '';
+
+            const today = new Date().toISOString().split('T')[0];
+            datePicker.value = today;
+            currentDate = today;
+            shareMessage.textContent = '🎉 預約成功！';
+        }
+
+        // 「不要」按鈕：亂跑 + 變小
+        function handleNoClick(e) {
+            e.stopPropagation();
+            if (btnNo.classList.contains('btn-no--disappear')) return;
+
+            const deltaX = (Math.random() * 100) - 40;
+            const deltaY = (Math.random() * 100) - 40;
+
+            let currentLeft = parseFloat(btnNo.style.left) || 0;
+            let currentTop = parseFloat(btnNo.style.top) || 0;
+            let newLeft = currentLeft + deltaX;
+            let newTop = currentTop + deltaY;
+
+            newLeft = Math.min(Math.max(newLeft, -40), 200);
+            newTop = Math.min(Math.max(newTop, -40), 160);
+
+            btnNo.style.position = 'relative';
+            btnNo.style.left = newLeft + 'px';
+            btnNo.style.top = newTop + 'px';
+            btnNo.classList.add('btn-no--run');
+
+            if (!btnNo.classList.contains('btn-no--small')) {
+                btnNo.classList.add('btn-no--small');
+            } else if (!btnNo.classList.contains('btn-no--smaller')) {
+                btnNo.classList.remove('btn-no--small');
+                btnNo.classList.add('btn-no--smaller');
+            } else if (!btnNo.classList.contains('btn-no--tiny')) {
+                btnNo.classList.remove('btn-no--smaller');
+                btnNo.classList.add('btn-no--tiny');
+            } else {
+                btnNo.classList.remove('btn-no--tiny');
+                btnNo.classList.add('btn-no--disappear');
+                btnNo.style.pointerEvents = 'none';
+            }
+        }
+
+        // 「要」按鈕：顯示日期選擇器，隱藏主要按鈕
+        function handleYesClick() {
+            dateSection.classList.add('active');
+            mainBtnGroup.classList.add('hidden');
+            shareArea.classList.remove('active');
+            resetArea.classList.remove('active');
+
+            // 重置「不要」按鈕樣式
+            btnNo.classList.remove('btn-no--small', 'btn-no--smaller', 'btn-no--tiny', 'btn-no--disappear');
+            btnNo.style.position = '';
+            btnNo.style.left = '';
+            btnNo.style.top = '';
+            btnNo.style.pointerEvents = '';
+            btnNo.style.opacity = '';
+        }
+
+        // 送出日期：跳出確認視窗
+        function handleSendDate() {
+            const selectedDate = datePicker.value;
+            if (!selectedDate) {
+                alert('請選擇一個日期！');
+                return;
+            }
+
+            const confirmMessage = `📅 確認要在 ${selectedDate} 出門嗎？`;
+            if (confirm(confirmMessage)) {
+                currentDate = selectedDate;
+                shareMessage.textContent = `🎉 預約成功！我們 ${currentDate} 出門！`;
+                shareArea.classList.add('active');
+                resetArea.classList.add('active');
+                dateSection.classList.remove('active');
+            }
+        }
+
+        // 複製訊息
+        function handleCopy() {
+            const text = shareMessage.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const original = copyBtn.textContent;
+                copyBtn.textContent = '✅ 已複製!';
+                setTimeout(() => { copyBtn.textContent = original; }, 1800);
+            }).catch(() => {
+                alert('複製失敗，請手動複製：' + text);
+            });
+        }
+
+        // 分享
+        function handleShare() {
+            const text = shareMessage.textContent;
+            if (navigator.share) {
+                navigator.share({
+                    title: '出門',
+                    text: text,
+                }).catch((err) => {
+                    if (err.name !== 'AbortError') {
+                        alert('分享失敗: ' + err);
+                    }
+                });
+            } else {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('已複製訊息到剪貼簿，可以貼給朋友 💌');
+                }).catch(() => {
+                    alert('請手動複製訊息：' + text);
+                });
+            }
+        }
+
+        // 重新開始
+        function handleReset() {
+            resetAllState();
+        }
+
+        // 綁定事件
+        btnYes.addEventListener('click', handleYesClick);
+        btnNo.addEventListener('click', handleNoClick);
+        btnSendDate.addEventListener('click', handleSendDate);
+        copyBtn.addEventListener('click', handleCopy);
+        shareBtn.addEventListener('click', handleShare);
+        resetBtn.addEventListener('click', handleReset);
+
+        datePicker.addEventListener('change', function() {
+            currentDate = this.value;
+        });
+
+        // 設定預設日期
+        (function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            datePicker.value = today;
+            currentDate = today;
+        })();
+
+        console.log('🐾 要跟我出門嗎？ 已準備好了！');
+    })();
+</script>
+</body>
+</html>
