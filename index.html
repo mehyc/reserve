@@ -103,7 +103,8 @@
         select,
         input[type="date"],
         input[type="time"],
-        input[type="text"] {
+        input[type="text"],
+        input[type="number"] {
             background: white;
             border: 2px solid #dbbd96;
             padding: 12px 16px;
@@ -120,16 +121,28 @@
             cursor: pointer;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        input[type="number"] {
             cursor: text;
             text-align: left;
             padding-left: 20px;
         }
 
+        input[type="number"] {
+            text-align: center;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
         select:focus,
         input[type="date"]:focus,
         input[type="time"]:focus,
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        input[type="number"]:focus {
             border-color: #b48b5a;
             box-shadow: 0 0 0 4px #f7dfbe;
         }
@@ -152,6 +165,31 @@
             max-width: 160px;
             flex: 1;
             min-width: 100px;
+        }
+
+        .later-group {
+            display: none;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .later-group.active {
+            display: flex;
+        }
+
+        .later-group input[type="number"] {
+            max-width: 100px;
+            flex: 1;
+            min-width: 70px;
+        }
+
+        .later-group span {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4a321e;
+            align-self: center;
         }
 
         .btn-send {
@@ -336,6 +374,13 @@
             .time-group input[type="time"] {
                 max-width: 220px;
             }
+            .later-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            .later-group input[type="number"] {
+                max-width: 150px;
+            }
             .share-btn {
                 font-size: 0.8rem;
                 padding: 8px 12px;
@@ -369,11 +414,20 @@
             <label>⏰ 選擇時間</label>
             <div class="time-group">
                 <select id="timeTypeSelect">
+                    <option value="">請選擇</option>
                     <option value="now">🟢 現在</option>
                     <option value="specific">🕐 指定時間</option>
                     <option value="later">🌙 晚點</option>
                 </select>
-                <input type="time" id="timePicker" value="15:00" style="display:none;">
+                <input type="time" id="timePicker" style="display:none;">
+            </div>
+
+            <!-- 晚點選項 -->
+            <div class="later-group" id="laterGroup">
+                <input type="number" id="laterHours" placeholder="小時" min="0" max="23">
+                <span>小時</span>
+                <input type="number" id="laterMinutes" placeholder="分鐘" min="0" max="59">
+                <span>分鐘</span>
             </div>
 
             <button class="btn-send" id="btnSendDate">📨 送出預約</button>
@@ -422,6 +476,9 @@
         const datePicker = document.getElementById('datePicker');
         const timeTypeSelect = document.getElementById('timeTypeSelect');
         const timePicker = document.getElementById('timePicker');
+        const laterGroup = document.getElementById('laterGroup');
+        const laterHours = document.getElementById('laterHours');
+        const laterMinutes = document.getElementById('laterMinutes');
         const btnSendDate = document.getElementById('btnSendDate');
         const shareArea = document.getElementById('shareArea');
         const shareMessage = document.getElementById('shareMessage');
@@ -442,17 +499,50 @@
 
         function getTimeText() {
             const timeType = timeTypeSelect.value;
+
             if (timeType === 'now') return '現在';
-            if (timeType === 'later') return '晚點';
             if (timeType === 'specific') {
-                return timePicker.value || '15:00';
+                return timePicker.value || '';
+            }
+            if (timeType === 'later') {
+                const hours = parseInt(laterHours.value) || 0;
+                const minutes = parseInt(laterMinutes.value) || 0;
+                if (hours === 0 && minutes === 0) return '晚點（立即）';
+                let result = '晚';
+                if (hours > 0) result += ` ${hours}小時`;
+                if (minutes > 0) result += ` ${minutes}分鐘`;
+                return result.trim() || '晚點';
             }
             return '';
         }
 
-        function getToday() {
-            return new Date().toISOString().split('T')[0];
+        function isTimeValid() {
+            const timeType = timeTypeSelect.value;
+            if (timeType === 'specific') {
+                return timePicker.value && timePicker.value.length > 0;
+            }
+            if (timeType === 'later') {
+                const hours = parseInt(laterHours.value) || 0;
+                const minutes = parseInt(laterMinutes.value) || 0;
+                return hours > 0 || minutes > 0;
+            }
+            return true; // 'now' 或空值
         }
+
+        // ===== 時間類型切換 =====
+        timeTypeSelect.addEventListener('change', function() {
+            timePicker.style.display = 'none';
+            laterGroup.classList.remove('active');
+
+            if (this.value === 'specific') {
+                timePicker.style.display = 'inline-block';
+                timePicker.value = '';
+            } else if (this.value === 'later') {
+                laterGroup.classList.add('active');
+                laterHours.value = '';
+                laterMinutes.value = '';
+            }
+        });
 
         // ===== 送出預約到 Firebase =====
         function handleSendDate() {
@@ -460,6 +550,7 @@
             const selectedService = serviceSelect.value;
             const selectedDate = datePicker.value;
             const timeText = getTimeText();
+            const timeType = timeTypeSelect.value;
 
             if (!name) {
                 alert('請輸入您的姓名！');
@@ -475,6 +566,27 @@
             if (!selectedDate) {
                 alert('請選擇日期！');
                 return;
+            }
+
+            if (!timeType) {
+                alert('請選擇時間選項！');
+                return;
+            }
+
+            if (timeType === 'specific' && !timePicker.value) {
+                alert('請輸入指定時間！');
+                timePicker.focus();
+                return;
+            }
+
+            if (timeType === 'later') {
+                const hours = parseInt(laterHours.value) || 0;
+                const minutes = parseInt(laterMinutes.value) || 0;
+                if (hours === 0 && minutes === 0) {
+                    alert('請輸入晚點的小時或分鐘！');
+                    laterHours.focus();
+                    return;
+                }
             }
 
             const serviceEmoji = {
@@ -499,9 +611,15 @@
                     service: selectedService,
                     date: selectedDate,
                     time: timeText,
+                    timeType: timeType,
                     emoji: emoji,
                     timestamp: new Date().toISOString()
                 };
+
+                if (timeType === 'later') {
+                    bookingData.laterHours = parseInt(laterHours.value) || 0;
+                    bookingData.laterMinutes = parseInt(laterMinutes.value) || 0;
+                }
 
                 database.ref('bookings/' + newKey).set(bookingData)
                     .then(() => {
@@ -547,25 +665,17 @@
 
             nameInput.value = '';
             serviceSelect.value = '';
-            timeTypeSelect.value = 'now';
+            timeTypeSelect.value = '';
             timePicker.style.display = 'none';
-            timePicker.value = '15:00';
+            timePicker.value = '';
+            laterGroup.classList.remove('active');
+            laterHours.value = '';
+            laterMinutes.value = '';
 
-            const today = getToday();
-            datePicker.value = today;
+            datePicker.value = '';
             shareMessage.textContent = '🎉 預約成功！';
             statusText.textContent = '✅ 已連線 Firebase';
         }
-
-        // ===== 時間類型切換 =====
-        timeTypeSelect.addEventListener('change', function() {
-            if (this.value === 'specific') {
-                timePicker.style.display = 'inline-block';
-                timePicker.value = '15:00';
-            } else {
-                timePicker.style.display = 'none';
-            }
-        });
 
         // ===== 事件綁定 =====
         btnSendDate.addEventListener('click', handleSendDate);
@@ -579,8 +689,7 @@
         });
 
         // ===== 初始化 =====
-        const today = getToday();
-        datePicker.value = today;
+        datePicker.value = '';
 
         const connectedRef = database.ref('.info/connected');
         connectedRef.on('value', (snap) => {
