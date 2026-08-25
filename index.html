@@ -406,6 +406,7 @@
                 <option value="出門">🚶 出門</option>
                 <option value="聊天">💬 聊天</option>
                 <option value="打電話">📞 打電話</option>
+                <option value="玩遊戲">🎮 玩遊戲</option>
             </select>
 
             <label>📅 選擇日期</label>
@@ -526,7 +527,7 @@
                 const minutes = parseInt(laterMinutes.value) || 0;
                 return hours > 0 || minutes > 0;
             }
-            return true; // 'now' 或空值
+            return true;
         }
 
         // ===== 時間類型切換 =====
@@ -592,7 +593,8 @@
             const serviceEmoji = {
                 '出門': '🚶',
                 '聊天': '💬',
-                '打電話': '📞'
+                '打電話': '📞',
+                '玩遊戲': '🎮'
             };
 
             const emoji = serviceEmoji[selectedService] || '📋';
