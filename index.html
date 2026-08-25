@@ -87,6 +87,12 @@
             align-items: center;
             gap: 16px;
             border: 2px dashed #dbbd96;
+            transition: opacity 0.3s ease;
+        }
+
+        .date-section.locked {
+            opacity: 0.6;
+            pointer-events: none;
         }
 
         .date-section label {
@@ -145,6 +151,12 @@
         input[type="number"]:focus {
             border-color: #b48b5a;
             box-shadow: 0 0 0 4px #f7dfbe;
+        }
+
+        .date-section.locked select,
+        .date-section.locked input {
+            cursor: not-allowed;
+            background: #f0ece6;
         }
 
         .time-group {
@@ -219,6 +231,10 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .btn-send.hidden {
+            display: none;
         }
 
         .share-area {
@@ -356,6 +372,21 @@
             opacity: 0.7;
         }
 
+        .lock-badge {
+            display: none;
+            background: #c47a6a;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-top: -8px;
+        }
+
+        .lock-badge.active {
+            display: inline-block;
+        }
+
         @media (max-width: 480px) {
             .card {
                 padding: 20px 12px;
@@ -396,7 +427,7 @@
         </h1>
         <div class="subhead">📝 填寫預約資訊</div>
 
-        <div class="date-section">
+        <div class="date-section" id="dateSection">
             <label for="nameInput">👤 您的姓名</label>
             <input type="text" id="nameInput" placeholder="請輸入姓名" maxlength="20">
 
@@ -433,6 +464,7 @@
 
             <button class="btn-send" id="btnSendDate">📨 送出預約</button>
             <div class="loading-text" id="statusText">✅ 已連線 Firebase</div>
+            <div class="lock-badge" id="lockBadge">🔒 已鎖定</div>
         </div>
 
         <div class="share-area" id="shareArea">
@@ -472,6 +504,7 @@
         const database = firebase.database();
 
         // ===== DOM 元素 =====
+        const dateSection = document.getElementById('dateSection');
         const nameInput = document.getElementById('nameInput');
         const serviceSelect = document.getElementById('serviceSelect');
         const datePicker = document.getElementById('datePicker');
@@ -488,6 +521,26 @@
         const resetArea = document.getElementById('resetArea');
         const toast = document.getElementById('toast');
         const statusText = document.getElementById('statusText');
+        const lockBadge = document.getElementById('lockBadge');
+
+        let isLocked = false;
+
+        // ===== 鎖定/解鎖功能 =====
+        function lockForm() {
+            isLocked = true;
+            dateSection.classList.add('locked');
+            lockBadge.classList.add('active');
+            btnSendDate.classList.add('hidden');
+            btnSendDate.disabled = true;
+        }
+
+        function unlockForm() {
+            isLocked = false;
+            dateSection.classList.remove('locked');
+            lockBadge.classList.remove('active');
+            btnSendDate.classList.remove('hidden');
+            btnSendDate.disabled = false;
+        }
 
         // ===== 工具函數 =====
         function showToast(text) {
@@ -517,21 +570,9 @@
             return '';
         }
 
-        function isTimeValid() {
-            const timeType = timeTypeSelect.value;
-            if (timeType === 'specific') {
-                return timePicker.value && timePicker.value.length > 0;
-            }
-            if (timeType === 'later') {
-                const hours = parseInt(laterHours.value) || 0;
-                const minutes = parseInt(laterMinutes.value) || 0;
-                return hours > 0 || minutes > 0;
-            }
-            return true;
-        }
-
         // ===== 時間類型切換 =====
         timeTypeSelect.addEventListener('change', function() {
+            if (isLocked) return;
             timePicker.style.display = 'none';
             laterGroup.classList.remove('active');
 
@@ -547,6 +588,8 @@
 
         // ===== 送出預約到 Firebase =====
         function handleSendDate() {
+            if (isLocked) return;
+
             const name = nameInput.value.trim();
             const selectedService = serviceSelect.value;
             const selectedDate = datePicker.value;
@@ -634,6 +677,9 @@
 
                         btnSendDate.disabled = false;
                         btnSendDate.textContent = '📨 送出預約';
+
+                        // 🔒 鎖定表單
+                        lockForm();
                     })
                     .catch((error) => {
                         alert('❌ 儲存失敗：' + error.message);
@@ -660,11 +706,16 @@
             });
         }
 
-        // ===== 重置 =====
+        // ===== 重新開始（解鎖 + 重置） =====
         function resetAllState() {
+            // 解鎖表單
+            unlockForm();
+
+            // 隱藏分享區和重置按鈕
             shareArea.classList.remove('active');
             resetArea.classList.remove('active');
 
+            // 清空所有欄位
             nameInput.value = '';
             serviceSelect.value = '';
             timeTypeSelect.value = '';
@@ -673,10 +724,14 @@
             laterGroup.classList.remove('active');
             laterHours.value = '';
             laterMinutes.value = '';
-
             datePicker.value = '';
+
             shareMessage.textContent = '🎉 預約成功！';
             statusText.textContent = '✅ 已連線 Firebase';
+            btnSendDate.classList.remove('hidden');
+            btnSendDate.disabled = false;
+
+            showToast('🔄 已重置，可以重新預約');
         }
 
         // ===== 事件綁定 =====
@@ -685,7 +740,7 @@
         resetBtn.addEventListener('click', resetAllState);
 
         nameInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !isLocked) {
                 btnSendDate.click();
             }
         });
