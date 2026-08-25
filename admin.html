@@ -35,7 +35,7 @@
             border-radius: 60px 60px 40px 40px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
             padding: 32px 24px 30px;
-            max-width: 650px;
+            max-width: 750px;
             width: 100%;
             text-align: center;
             border: 2px solid #fff3d6;
@@ -114,7 +114,7 @@
         }
 
         .booking-list {
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
             text-align: left;
         }
@@ -129,7 +129,14 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
+        }
+
+        .booking-item .main-info {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 12px;
         }
 
         .booking-item .info {
@@ -140,6 +147,15 @@
         .booking-item .detail {
             color: #6b4c2e;
             font-size: 0.9rem;
+        }
+
+        .booking-item .time-created {
+            color: #8a7a6a;
+            font-size: 0.8rem;
+            background: #f5ede4;
+            padding: 2px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
         }
 
         .booking-item .delete-btn {
@@ -235,7 +251,7 @@
             margin-bottom: 12px;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
             .card {
                 padding: 20px 12px;
             }
@@ -248,6 +264,16 @@
             .booking-item {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 4px;
+            }
+            .booking-item .main-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            .booking-item .time-created {
+                white-space: normal;
+                font-size: 0.75rem;
             }
             .footer-actions {
                 flex-direction: column;
@@ -339,6 +365,21 @@
             return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
         }
 
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '未知時間';
+            try {
+                const d = new Date(timestamp);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                return `${year}/${month}/${day} ${hours}:${minutes}`;
+            } catch (e) {
+                return timestamp;
+            }
+        }
+
         // ===== 渲染列表 =====
         function renderAdmin() {
             totalCount.textContent = bookings.length;
@@ -351,6 +392,7 @@
                 return;
             }
 
+            // 依時間排序（最新在上）
             const sorted = [...bookings].reverse();
 
             let html = '';
@@ -359,11 +401,15 @@
                 const emoji = b.emoji || '📋';
                 const dateStr = formatDate(b.date);
                 const name = b.name || '未署名';
+                const timeStr = b.time || '未設定';
+                const createdTime = formatTimestamp(b.timestamp);
+
                 html += `
                         <div class="booking-item" data-key="${b.key || ''}">
-                            <div>
+                            <div class="main-info">
                                 <span class="info">${emoji} ${b.service}</span>
-                                <span class="detail">👤 ${name} · 📆 ${dateStr} · ⏰ ${b.time}</span>
+                                <span class="detail">👤 ${name} · 📆 ${dateStr} · ⏰ ${timeStr}</span>
+                                <span class="time-created">📨 ${createdTime}</span>
                             </div>
                             <button class="delete-btn" data-key="${b.key || ''}">✕ 刪除</button>
                         </div>
