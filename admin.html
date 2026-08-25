@@ -35,7 +35,7 @@
             border-radius: 60px 60px 40px 40px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
             padding: 32px 24px 30px;
-            max-width: 750px;
+            max-width: 780px;
             width: 100%;
             text-align: center;
             border: 2px solid #fff3d6;
@@ -121,7 +121,7 @@
 
         .booking-item {
             background: white;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 30px;
             margin-bottom: 8px;
             border: 1px solid #dbbd96;
@@ -136,7 +136,7 @@
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 6px 12px;
+            gap: 6px 10px;
         }
 
         .booking-item .info {
@@ -156,6 +156,8 @@
             padding: 2px 12px;
             border-radius: 20px;
             white-space: nowrap;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
         }
 
         .booking-item .delete-btn {
@@ -270,10 +272,16 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 4px;
+                width: 100%;
             }
             .booking-item .time-created {
                 white-space: normal;
                 font-size: 0.75rem;
+                width: 100%;
+                text-align: left;
+            }
+            .booking-item .delete-btn {
+                align-self: flex-end;
             }
             .footer-actions {
                 flex-direction: column;
@@ -365,19 +373,36 @@
             return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
         }
 
+        // ===== 格式化時間（含秒數） =====
         function formatTimestamp(timestamp) {
             if (!timestamp) return '未知時間';
             try {
                 const d = new Date(timestamp);
+                // 檢查是否為有效日期
+                if (isNaN(d.getTime())) return '無效時間';
+
                 const year = d.getFullYear();
                 const month = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
                 const hours = String(d.getHours()).padStart(2, '0');
                 const minutes = String(d.getMinutes()).padStart(2, '0');
-                return `${year}/${month}/${day} ${hours}:${minutes}`;
+                const seconds = String(d.getSeconds()).padStart(2, '0');
+                return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
             } catch (e) {
                 return timestamp;
             }
+        }
+
+        // ===== 取得當下時間（含秒數）用於顯示 =====
+        function getCurrentTime() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const seconds = String(d.getSeconds()).padStart(2, '0');
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
         }
 
         // ===== 渲染列表 =====
@@ -493,6 +518,7 @@
         });
 
         console.log('📊 後台 (Firebase 版) 已準備好了！');
+        console.log('🕐 目前時間：' + getCurrentTime());
     </script>
 </body>
 </html>
